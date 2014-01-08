@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+require 'rubygems'
+require 'json'
 
 # config settings
 branched_from_user = ''
@@ -25,5 +27,22 @@ print "Do you want to run this(y/n)? "
 run_it = $stdin.gets.chomp.strip
 
 if (run_it.downcase == "y")
-  system(command_to_be_ran)
+  pull_request_results = `#{command_to_be_ran}`
+
+  print "Do you want to update PT ticket comment(y/n)? "
+  pt_comment = $stdin.gets.chomp.strip
+
+  if (pt_comment.downcase == "y")
+    pull_request_link_parsed = JSON.parse(pull_request_results)
+    pull_request_link = pull_request_link_parsed['html_url']
+
+    unless(pull_request_link.nil?)
+      print "Updating ticket with the Github pull request URL\n"
+
+      story_id = branch_name.split("_")[0]
+      system("GITHUB_PULL_REQUEST_URL=\"#{pull_request_link}\" PT_STORY_ID=\"#{story_id}\" ruby update_ticket_status.rb")
+    else
+      print "A pull request was already created for this no ticket update needed!\n"
+    end
+  end
 end
